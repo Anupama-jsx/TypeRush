@@ -258,6 +258,29 @@ function Dashboard({ displayName, onLogout, onPractice, onRaceCountdown }) {
           </section>
         </div>
 
+        {dashboard && <section className="race-statistics" aria-labelledby="race-statistics-title">
+          <div className="race-statistics-head">
+            <div><p className="room-section-label">RESULTS</p><h2 id="race-statistics-title">Your race statistics.</h2><p>Wins are awarded to the first racer who completes the passage.</p></div>
+            <span className="stat-win-rate">{dashboard.statistics.winRatePercentage}% win rate</span>
+          </div>
+          <div className="race-statistics-summary">
+            <article><span>WINS</span><strong>{dashboard.statistics.wins}</strong></article>
+            <article><span>LOSSES</span><strong>{dashboard.statistics.losses}</strong></article>
+            <article><span>NO CONTEST</span><strong>{dashboard.statistics.noContests}</strong></article>
+            <article><span>BEST WPM</span><strong>{dashboard.statistics.bestWpm ?? '—'}</strong></article>
+          </div>
+          {dashboard.recentRaces?.length > 0 ? <div className="race-history" role="region" aria-label="Recent race results" tabIndex="0">
+            <div className="race-history-row race-history-labels"><span>RESULT</span><span>RACE</span><span>WINNER</span><span>PACE</span><span>ACCURACY</span></div>
+            {dashboard.recentRaces.map(race => <div className="race-history-row" key={race.raceId}>
+              <strong className={`race-result result-${race.result.toLowerCase().replace(/\s+/g, '-')}`}>{race.result}</strong>
+              <span>{race.opponents || 'Solo race'}<small>{new Date(race.completedAtUtc).toLocaleDateString()}</small></span>
+              <span>{race.winnerName || 'No winner'}<small>{race.elapsedMilliseconds == null ? '' : formatElapsed(race.elapsedMilliseconds)}</small></span>
+              <span>{race.wpm == null ? '—' : `${race.wpm} WPM`}</span>
+              <span>{race.accuracyPercentage == null ? '—' : `${race.accuracyPercentage}%`}</span>
+            </div>)}
+          </div> : <p className="race-history-empty">Finish a multiplayer race to see the winner and your complete result here.</p>}
+        </section>}
+
         {notice && <p className="dashboard-notice" role="alert">{notice}</p>}
       </section>
       <footer className="dashboard-footer">© 2026 TypeRush <span>•</span> Built for people who like to move fast.</footer>
@@ -514,8 +537,9 @@ function RaceArena({ race: initialRace, displayName, onBack }) {
           <article><span className="stat-icon" aria-hidden="true">⌁</span><p>Characters</p><strong>{correctCharacters}<small> / {typedLength}</small></strong></article>
         </section>
         <section className="arena-racers" aria-label="Live racer progress">
+          {console.log('Racers:', racers)}
           <div><span className="room-section-label">LIVE RACEBOARD</span><strong>Everyone’s pace, live.</strong></div>
-          {racers.length ? <ul>{racers.map(racer => <li key={racer.userId}><span className="race-avatar">{String(racer.userId).slice(0, 1).toUpperCase()}</span><span className="race-racer-name">Racer<small>{racer.correctCharacters} / {racer.passageLength} characters</small></span><strong>{Math.round(racer.wpm || 0)} <small>WPM</small></strong><em>{Math.round(racer.accuracyPercentage || 0)}%</em></li>)}</ul> : <p>Waiting for live typing updates from the racers.</p>}
+          {racers.length ? <ul>{racers.map(racer => <li key={racer.userId}><span className="race-avatar">{racer.displayName?.slice(0, 1).toUpperCase() || 'R'}</span><span className="race-racer-name">{racer.displayName || 'Racer'}<small>{racer.correctCharacters} / {racer.passageLength} characters</small></span><strong>{Math.round(racer.wpm || 0)} <small>WPM</small></strong><em>{Math.round(racer.accuracyPercentage || 0)}%</em></li>)}</ul> : <p>Waiting for live typing updates from the racers.</p>}
         </section>
       </section>
     </main>
@@ -638,6 +662,11 @@ function PracticePage({ displayName, onBack }) {
 
 function StatCard({ label, value, icon }) {
   return <article className="stat-card"><span className="stat-icon" aria-hidden="true">{icon}</span><p>{label}</p><strong>{value}</strong></article>
+}
+
+function formatElapsed(milliseconds) {
+  const seconds = Math.max(0, Math.round(milliseconds / 1000))
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 function Racer({ initial, name, speed, progress, color }) {
